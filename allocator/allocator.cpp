@@ -53,7 +53,7 @@ void* allocator::malloc(size_t size) {
   if (it != block_list_.end()) {
     block = *it;
     block->free = false;
-  } else { // No suitable free block found, request new space
+  } else {  // No suitable free block found, request new space
     block = request_space(size);
     if (!block) {
       return nullptr;

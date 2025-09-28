@@ -1,5 +1,5 @@
 CXX = clang++
-CXXFLAGS = -std=c++11 -g -W -Wall -Wextra
+CXXFLAGS = -std=c++11 -g -W -Wall -Wextra -Wno-deprecated-declarations
 CXXFLAGS_17 = -std=c++17 -g -W -Wall -Wextra
 GTEST_FLAGS = -lgtest -lgtest_main -pthread
 

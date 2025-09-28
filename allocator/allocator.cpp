@@ -1,6 +1,5 @@
 #include <assert.h>
 #include <string.h>
-#include <sys/mman.h>
 #include <sys/types.h>
 #include <unistd.h>
 #include <algorithm>
@@ -9,12 +8,9 @@
 #include "allocator.h"
 
 block_meta* allocator::request_space(size_t size) {
-  block_meta* block;
-  block = static_cast<block_meta*>(mmap(nullptr, size + META_SIZE,
-                                        PROT_READ | PROT_WRITE,
-                                        MAP_PRIVATE | MAP_ANONYMOUS, -1, 0));
-  if (block == MAP_FAILED) {
-    return nullptr;  // mmap failed
+  block_meta* block = static_cast<block_meta*>(sbrk(size + META_SIZE));
+  if (block == (void*)-1) {
+    return nullptr;  // sbrk failed
   }
 
   block->size = size;
@@ -32,10 +28,8 @@ block_meta* allocator::get_block_ptr(void* ptr) {
 allocator::allocator() = default;
 
 allocator::~allocator() {
-  // Free all allocated blocks
-  for (auto* block : block_list_) {
-    munmap(block, block->size + META_SIZE);
-  }
+  // Note: sbrk allocations cannot be individually freed
+  // The program break can only be moved, not individual blocks freed
 }
 
 void* allocator::malloc(size_t size) {

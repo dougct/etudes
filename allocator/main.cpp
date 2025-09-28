@@ -14,6 +14,7 @@ void test_basic_allocation() {
   memset(ptr, 0xAA, 100);
 
   sfree(ptr);
+
   printf("✓ Basic allocation test passed\n");
 }
 
@@ -140,6 +141,7 @@ void test_calloc() {
   }
 
   sfree(arr);
+
   printf("✓ calloc test passed\n");
 }
 
@@ -167,6 +169,7 @@ void test_realloc() {
   assert(ptr != nullptr);
 
   sfree(ptr);
+
   printf("✓ realloc test passed\n");
 }
 
@@ -187,6 +190,7 @@ void test_large_allocation() {
   assert(data[large_size - 1] == 0xDD);
 
   sfree(ptr);
+
   printf("✓ Large allocation test passed\n");
 }
 

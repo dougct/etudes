@@ -4,6 +4,7 @@
 #include <sys/types.h>
 #include <unistd.h>
 #include <algorithm>
+#include <limits>
 
 #include "allocator.h"
 
@@ -27,11 +28,12 @@ block_meta* allocator::get_block_ptr(void* ptr) {
 }
 
 // Allocator class method implementations
+
 allocator::allocator() = default;
 
 allocator::~allocator() {
   // Free all allocated blocks
-  for (auto* block : block_list) {
+  for (auto* block : block_list_) {
     munmap(block, block->size + META_SIZE);
   }
 }
@@ -42,13 +44,13 @@ void* allocator::malloc(size_t size) {
   }
 
   // Try to find a free block with sufficient size
-  auto it = std::find_if(block_list.begin(), block_list.end(),
+  auto it = std::find_if(block_list_.begin(), block_list_.end(),
                          [size](const block_meta* block) {
                            return block->free && block->size >= size;
                          });
 
   block_meta* block;
-  if (it != block_list.end()) {
+  if (it != block_list_.end()) {
     block = *it;
     block->free = false;
   } else { // No suitable free block found, request new space
@@ -56,7 +58,7 @@ void* allocator::malloc(size_t size) {
     if (!block) {
       return nullptr;
     }
-    block_list.push_back(block);
+    block_list_.push_back(block);
   }
 
   return (block + 1);
@@ -86,18 +88,28 @@ void* allocator::realloc(void* ptr, size_t size) {
   // Malloc new space, free old space, then copy data to new space
   void* new_ptr = this->malloc(size);
   if (!new_ptr) {
-    return nullptr;  // TODO: set errno on failure.
+    return nullptr;
   }
   memcpy(new_ptr, ptr, block_ptr->size);
   this->free(ptr);
+
   return new_ptr;
 }
 
-void* allocator::calloc(size_t nelem, size_t elsize) {
-  size_t size = nelem * elsize;  // TODO: check for overflow.
+void* allocator::calloc(size_t num_elems, size_t elem_size) {
+  if (elem_size == 0) {
+    return nullptr;
+  }
+
+  if (num_elems > std::numeric_limits<size_t>::max() / elem_size) {
+    return nullptr;  // Overflow would occur
+  }
+
+  const size_t size = num_elems * elem_size;
   void* ptr = this->malloc(size);
   if (ptr) {
     memset(ptr, 0, size);
   }
+
   return ptr;
 }

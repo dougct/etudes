@@ -14,7 +14,7 @@ struct block_meta {
 
 class allocator {
 private:
-  std::list<block_meta*> block_list;
+  std::list<block_meta*> block_list_;
 
   block_meta* request_space(size_t size);
   block_meta* get_block_ptr(void* ptr);

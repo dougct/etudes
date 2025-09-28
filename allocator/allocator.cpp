@@ -96,19 +96,19 @@ void* allocator::realloc(void* ptr, size_t size) {
   return new_ptr;
 }
 
-void* allocator::calloc(size_t num_elems, size_t elem_size) {
-  if (elem_size == 0) {
+void* allocator::calloc(size_t nmemb, size_t size) {
+  if (size == 0) {
     return nullptr;
   }
 
-  if (num_elems > std::numeric_limits<size_t>::max() / elem_size) {
+  if (nmemb > std::numeric_limits<size_t>::max() / size) {
     return nullptr;  // Overflow would occur
   }
 
-  const size_t size = num_elems * elem_size;
-  void* ptr = this->malloc(size);
+  const size_t total_size = nmemb * size;
+  void* ptr = this->malloc(total_size);
   if (ptr) {
-    memset(ptr, 0, size);
+    memset(ptr, 0, total_size);
   }
 
   return ptr;

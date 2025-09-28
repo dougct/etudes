@@ -12,6 +12,7 @@ A collection of implementations exploring data structures, algorithms, and concu
 | [**Mutex Implementation**](mutex/) | C++ | Concurrency | Custom mutex implementations using futex-based and portable atomic primitives |
 | [**std::rotate**](std-rotate/) | C++ | Standard Library | Performance analysis and implementation study of the C++ standard library's rotate algorithm |
 | [**Thread Creation**](thread-creation/) | C++ | Performance | Benchmarking the overhead and performance characteristics of thread creation |
+| [**Memory Allocator**](allocator/) | C++ | Memory Management | Custom memory allocator with C++ and C interfaces using block-based allocation with mmap |
 
 ## Building and Testing
 

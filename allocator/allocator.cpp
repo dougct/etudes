@@ -2,7 +2,6 @@
 #include <string.h>
 #include <sys/types.h>
 #include <unistd.h>
-#include <algorithm>
 #include <limits>
 
 #include "allocator.h"
@@ -25,7 +24,7 @@ block_meta* allocator::get_block_ptr(void* ptr) {
 
 // Allocator class method implementations
 
-allocator::allocator() = default;
+allocator::allocator() : head(nullptr) {}
 
 allocator::~allocator() {
   // Note: sbrk allocations cannot be individually freed
@@ -38,22 +37,24 @@ void* allocator::malloc(size_t size) {
   }
 
   // Try to find a free block with sufficient size
-  auto it = std::find_if(block_list_.begin(), block_list_.end(),
-                         [size](const block_meta* block) {
-                           return block->free && block->size >= size;
-                         });
-
-  block_meta* block;
-  if (it != block_list_.end()) {
-    block = *it;
-    block->free = false;
-  } else {  // No suitable free block found, request new space
-    block = request_space(size);
-    if (!block) {
-      return nullptr;
+  block_meta* current = head;
+  while (current) {
+    if (current->free && current->size >= size) {
+      current->free = false;
+      return (current + 1);
     }
-    block_list_.push_back(block);
+    current = current->next;
   }
+
+  // No suitable free block found, request new space
+  block_meta* block = request_space(size);
+  if (!block) {
+    return nullptr;
+  }
+
+  // Add the new block to the front of the linked list
+  block->next = head;
+  head = block;
 
   return (block + 1);
 }

@@ -2,19 +2,19 @@
 #define ALLOCATOR_H
 
 #include <stddef.h>
-#include <list>
 
 // Stores meta information about each block of memory
 struct block_meta {
   size_t size{0};
   bool free{true};
+  block_meta* next{nullptr};
 };
 
 #define META_SIZE sizeof(struct block_meta)
 
 class allocator {
  private:
-  std::list<block_meta*> block_list_;
+  block_meta* head;
 
   block_meta* request_space(size_t size);
   block_meta* get_block_ptr(void* ptr);

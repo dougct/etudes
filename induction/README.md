@@ -8,8 +8,7 @@ A collection of algorithms leveraging mathematical induction. Each implementatio
 |:--|:--|:--|:--|
 | [**Binary Number Generation**](generate_binary_numbers.py) | Python | String Generation | Generate all binary numbers of n digits using recursive concatenation |
 | [**Word Permutations**](generate_permutations.py) | Python | Combinatorics | Generate all permutations of a word using character interpolation technique |
-| [**N-Digit Numbers (No Zeros)**](generate_n_digit_numbers.py) | Python | Number Generation | Recursively generate all n-digit numbers using only digits 1-9 |
-| [**Digit Sum Filtering**](generate_n_digit_numbers.py) | Python | Number Generation | Find all n-digit numbers whose digits sum to k (extends no-zeros solution) |
+| [**N-Digit Numbers Summing to K**](generate_n_digit_numbers.py) | Python | Number Generation | Recursively generate all n-digit numbers that sum to K |
 
 ## Running Tests
 

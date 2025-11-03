@@ -33,16 +33,9 @@ make clean
 
 ## TODO: Future Problems
 
-**Subset/Selection Problems:**
-- [ ] Generate all k-element subsets from a set of n elements (combinations)
-- [ ] Generate all subsets of a given set (power set generation)
-
-**Sequence Generation:**
 - [ ] Generate all increasing sequences of length k from numbers 1 to n
 - [ ] Generate all possible dice roll combinations that sum to a target value
-
-**Additional Combinatorial Problems:**
+- [ ] Generate all k-element subsets from a set of n elements (combinations)
+- [ ] Generate all subsets of a given set (power set generation)
 - [ ] Generate all ways to partition a number into k parts
 - [ ] Generate all valid parentheses combinations of length n
-- [ ] Generate all paths in a grid from top-left to bottom-right
-- [ ] Generate all ways to climb n stairs (with 1 or 2 steps at a time)

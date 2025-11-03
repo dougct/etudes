@@ -4,11 +4,11 @@ A collection of algorithms leveraging mathematical induction. Each implementatio
 
 ## Problem list
 
-| Problem | File | Category | Description |
-|:--|:--|:--|:--|
-| [**Binary Number Generation**](generate_binary_numbers.py) | Python | String Generation | Generate all binary numbers of n digits using recursive concatenation |
-| [**Word Permutations**](generate_permutations.py) | Python | Combinatorics | Generate all permutations of a word using character interpolation technique |
-| [**N-Digit Numbers Summing to K**](generate_n_digit_numbers.py) | Python | Number Generation | Recursively generate all n-digit numbers that sum to K |
+| Problem | File | Description |
+|:--|:--|:--|
+| [**Binary number generation**](generate_binary_numbers.py) | Python, C++ | Generate all binary numbers of n digits using recursive concatenation |
+| [**Word permutations**](generate_permutations.py) | Python, C++ | Generate all permutations of a word using character interpolation technique |
+| [**N-digit numbers summing to K**](generate_n_digit_numbers.py) | Python | Recursively generate all n-digit numbers that sum to K |
 
 ## Running Tests
 

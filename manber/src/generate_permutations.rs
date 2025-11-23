@@ -63,6 +63,7 @@ pub fn generate_permutations(word: &str, pos: usize) -> Vec<String> {
     return res;
 }
 
+#[allow(dead_code)]
 pub fn print_permutations(word: &str) {
     if word.is_empty() {
         return;

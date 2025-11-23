@@ -33,6 +33,7 @@ pub fn generate_binary_nums(n: usize) -> Vec<String> {
     return res;
 }
 
+#[allow(dead_code)]
 pub fn print_binary_nums(n: usize) {
     let nums = generate_binary_nums(n);
     for num in &nums {

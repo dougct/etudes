@@ -16,6 +16,7 @@ Solution:
 
 #[derive(Debug, Clone)]
 pub struct TreeNode {
+    #[allow(dead_code)]
     pub val: i32,
     pub left: Option<Box<TreeNode>>,
     pub right: Option<Box<TreeNode>>,

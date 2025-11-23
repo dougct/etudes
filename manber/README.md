@@ -11,6 +11,7 @@ A collection of algorithms leveraging mathematical induction, implemented in Rus
 | [**Polynomial evaluation**](src/evaluate_polynomials.rs) | Rust | Evaluate polynomials using Horner's rule with inductive approach |
 | [**Binary tree balance factors**](src/balance_factors.rs) | Rust | Compute balance factors for all nodes in a binary tree |
 | [**Maximum consecutive subsequence**](src/maximum_consecutive_subsequence.rs) | Rust | Find the maximum sum of consecutive elements using Kadane's algorithm |
+| [**Longest increasing subsequence**](src/lis.rs) | Rust | Find the length of the longest increasing subsequence using dynamic programming |
 
 ## Running Tests
 

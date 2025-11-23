@@ -2,6 +2,7 @@ mod balance_factors;
 mod evaluate_polynomials;
 mod generate_binary_nums;
 mod generate_permutations;
+mod lis;
 mod maximum_consecutive_subsequence;
 
 fn main() {

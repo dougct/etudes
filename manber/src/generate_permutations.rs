@@ -46,15 +46,16 @@ pub fn generate_permutations(word: &str, pos: usize) -> Vec<String> {
     }
 
     // Word with ch removed where ch is the char at word[pos]
-    let chars: Vec<char> = word.chars().collect();
     let smaller_word = format!("{}{}", &word[..pos], &word[pos + 1..]);
 
     // All permutations of word without ch
     let perms = generate_permutations(&smaller_word, pos - 1);
 
-    // Interpolate ch back into every position of every permutation of the word
-    let ch = chars[pos];
+
     let mut res = Vec::new();
+
+    // Interpolate ch back into every position of every permutation of the word
+    let ch = word.chars().nth(pos).unwrap();
     for perm in &perms {
         let interpolations = interpolate(ch, perm);
         res.extend(interpolations);

@@ -40,28 +40,24 @@ impl TreeNode {
     }
 }
 
-fn height(node: &Option<Box<TreeNode>>) -> i32 {
+fn compute_heights_and_balance_factors(node: &Option<Box<TreeNode>>, result: &mut Vec<i32>) -> i32 {
     match node {
         None => 0,
-        Some(n) => 1 + height(&n.left).max(height(&n.right)),
-    }
-}
+        Some(n) => {
+            let left_height = compute_heights_and_balance_factors(&n.left, result);
+            let right_height = compute_heights_and_balance_factors(&n.right, result);
 
-fn collect_balance_factors(node: &Option<Box<TreeNode>>, result: &mut Vec<i32>) {
-    if let Some(n) = node {
-        let left_height = height(&n.left);
-        let right_height = height(&n.right);
-        let balance_factor = left_height - right_height;
+            let balance_factor = left_height - right_height;
+            result.push(balance_factor);
 
-        result.push(balance_factor);
-        collect_balance_factors(&n.left, result);
-        collect_balance_factors(&n.right, result);
+            return 1 + left_height.max(right_height)
+        }
     }
 }
 
 pub fn compute_balance_factors(root: &Option<Box<TreeNode>>) -> Vec<i32> {
     let mut result = Vec::new();
-    collect_balance_factors(root, &mut result);
+    compute_heights_and_balance_factors(root, &mut result);
     return result;
 }
 
@@ -92,9 +88,9 @@ mod tests {
         let mut root = TreeNode::new(2);
         root.left = Some(Box::new(TreeNode::new(1)));
         let balance_factors = compute_balance_factors(&Some(Box::new(root)));
-        // Balance factor for node 2: height(left) - height(right) = 1 - 0 = 1
-        // Balance factor for node 1: height(left) - height(right) = 0 - 0 = 0
-        assert_eq!(balance_factors, vec![1, 0]);
+        // Post-order traversal: left child (1) first, then root (2)
+        // Balance factors: [0, 1] (leaf=0, root=1)
+        assert_eq!(balance_factors, vec![0, 1]);
     }
 
     #[test]
@@ -106,9 +102,9 @@ mod tests {
         let mut root = TreeNode::new(1);
         root.right = Some(Box::new(TreeNode::new(2)));
         let balance_factors = compute_balance_factors(&Some(Box::new(root)));
-        // Balance factor for node 1: height(left) - height(right) = 0 - 1 = -1
-        // Balance factor for node 2: height(left) - height(right) = 0 - 0 = 0
-        assert_eq!(balance_factors, vec![-1, 0]);
+        // Post-order traversal: right child (2) first, then root (1)
+        // Balance factors: [0, -1] (leaf=0, root=-1)
+        assert_eq!(balance_factors, vec![0, -1]);
     }
 
     #[test]
@@ -150,8 +146,176 @@ mod tests {
             ))),
         );
         let balance_factors = compute_balance_factors(&Some(Box::new(root)));
-        // Expected balance factors (in some traversal order)
-        // This test will need to be adjusted based on the traversal order chosen
-        assert_eq!(balance_factors.len(), 6);
+        // Balance factors in pre-order traversal:
+        // Node 4: left_height=2, right_height=2, balance=0
+        // Node 2: left_height=1, right_height=1, balance=0
+        // Node 1: left_height=0, right_height=0, balance=0
+        // Node 3: left_height=0, right_height=0, balance=0
+        // Node 6: left_height=0, right_height=1, balance=-1
+        // Node 7: left_height=0, right_height=0, balance=0
+        assert_eq!(balance_factors, vec![0, 0, 0, 0, -1, 0]);
+    }
+
+    #[test]
+    fn test_deeply_left_unbalanced() {
+        // Tree:
+        //     4
+        //    /
+        //   3
+        //  /
+        // 2
+        //  /
+        // 1
+        let root = Some(Box::new(TreeNode::with_children(
+            4,
+            Some(Box::new(TreeNode::with_children(
+                3,
+                Some(Box::new(TreeNode::with_children(
+                    2,
+                    Some(Box::new(TreeNode::new(1))),
+                    None,
+                ))),
+                None,
+            ))),
+            None,
+        )));
+        let balance_factors = compute_balance_factors(&root);
+        // Post-order traversal: 1, 2, 3, 4
+        // Balance factors: [0, 1, 2, 3] (leaf to root)
+        assert_eq!(balance_factors, vec![0, 1, 2, 3]);
+    }
+
+    #[test]
+    fn test_deeply_right_unbalanced() {
+        // Tree:
+        // 1
+        //  \
+        //   2
+        //    \
+        //     3
+        //      \
+        //       4
+        let root = Some(Box::new(TreeNode::with_children(
+            1,
+            None,
+            Some(Box::new(TreeNode::with_children(
+                2,
+                None,
+                Some(Box::new(TreeNode::with_children(
+                    3,
+                    None,
+                    Some(Box::new(TreeNode::new(4))),
+                ))),
+            ))),
+        )));
+        let balance_factors = compute_balance_factors(&root);
+        // Post-order traversal: 4, 3, 2, 1
+        // Balance factors: [0, -1, -2, -3] (leaf to root)
+        assert_eq!(balance_factors, vec![0, -1, -2, -3]);
+    }
+
+    #[test]
+    fn test_zigzag_tree() {
+        // Tree:
+        //     1
+        //      \
+        //       3
+        //      /
+        //     2
+        //      \
+        //       4
+        let root = Some(Box::new(TreeNode::with_children(
+            1,
+            None,
+            Some(Box::new(TreeNode::with_children(
+                3,
+                Some(Box::new(TreeNode::with_children(
+                    2,
+                    None,
+                    Some(Box::new(TreeNode::new(4))),
+                ))),
+                None,
+            ))),
+        )));
+        let balance_factors = compute_balance_factors(&root);
+        // Post-order traversal: 4, 2, 3, 1
+        // Balance factors: [0, -1, 2, -3] (4=0, 2=-1, 3=2, 1=-3)
+        assert_eq!(balance_factors, vec![0, -1, 2, -3]);
+    }
+
+    #[test]
+    fn test_extreme_balance_factors() {
+        // Create a tree with balance factor of 5
+        let mut node = TreeNode::new(6);
+        for i in (1..=5).rev() {
+            node = TreeNode::with_children(i, Some(Box::new(node)), None);
+        }
+        let root = Some(Box::new(node));
+        let balance_factors = compute_balance_factors(&root);
+
+        // Post-order traversal: 6, 5, 4, 3, 2, 1
+        // Balance factors: [0, 1, 2, 3, 4, 5] (leaf to root)
+        assert_eq!(balance_factors, vec![0, 1, 2, 3, 4, 5]);
+    }
+
+    #[test]
+    fn test_perfect_binary_tree() {
+        // Tree:
+        //       4
+        //     /   \
+        //    2     6
+        //   / \   / \
+        //  1   3 5   7
+        let root = TreeNode::with_children(
+            4,
+            Some(Box::new(TreeNode::with_children(
+                2,
+                Some(Box::new(TreeNode::new(1))),
+                Some(Box::new(TreeNode::new(3))),
+            ))),
+            Some(Box::new(TreeNode::with_children(
+                6,
+                Some(Box::new(TreeNode::new(5))),
+                Some(Box::new(TreeNode::new(7))),
+            ))),
+        );
+        let balance_factors = compute_balance_factors(&Some(Box::new(root)));
+        // All nodes in a perfect binary tree should have balance factor 0
+        assert_eq!(balance_factors, vec![0, 0, 0, 0, 0, 0, 0]);
+    }
+
+    #[test]
+    fn test_single_child_nodes() {
+        // Tree with mixed single-child scenarios:
+        //     5
+        //    /
+        //   3
+        //    \
+        //     4
+        //    /
+        //   2
+        //    \
+        //     1
+        let root = Some(Box::new(TreeNode::with_children(
+            5,
+            Some(Box::new(TreeNode::with_children(
+                3,
+                None,
+                Some(Box::new(TreeNode::with_children(
+                    4,
+                    Some(Box::new(TreeNode::with_children(
+                        2,
+                        None,
+                        Some(Box::new(TreeNode::new(1))),
+                    ))),
+                    None,
+                ))),
+            ))),
+            None,
+        )));
+        let balance_factors = compute_balance_factors(&root);
+        // Post-order traversal: 1, 2, 4, 3, 5
+        // Balance factors: [0, -1, 2, -3, 4] (1=0, 2=-1, 4=2, 3=-3, 5=4)
+        assert_eq!(balance_factors, vec![0, -1, 2, -3, 4]);
     }
 }

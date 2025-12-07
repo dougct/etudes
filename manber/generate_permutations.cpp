@@ -80,8 +80,7 @@ void print_permutations(const std::string& word) {
     return;
   }
 
-  auto perms =
-      generate_permutations(word, word.length() - 1);
+  auto perms = generate_permutations(word, word.length() - 1);
   for (const auto& perm : perms) {
     std::cout << perm << "\n";
   }

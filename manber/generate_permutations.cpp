@@ -45,7 +45,7 @@ std::vector<std::string> interpolate(char ch, const std::string& word) {
   for (size_t i = 0; i <= word.length(); ++i) {
     // word.substr(0, i) will be empty when i == 0
     // word.substr(i) will be empty when i == word.length()
-    std::string interpolation = word.substr(0, i) + ch + word.substr(i);
+    auto interpolation = word.substr(0, i) + ch + word.substr(i);
     res.push_back(interpolation);
   }
   return res;
@@ -61,14 +61,14 @@ std::vector<std::string> generate_permutations(const std::string& word,
   std::string smaller_word = word.substr(0, pos) + word.substr(pos + 1);
 
   // All permutations of word without ch
-  std::vector<std::string> perms = generate_permutations(smaller_word, pos - 1);
+  auto perms = generate_permutations(smaller_word, pos - 1);
 
   std::vector<std::string> res;
 
   // Interpolate ch back into every position of every permutation of the word
   char ch = word[pos];
   for (const auto& perm : perms) {
-    std::vector<std::string> interpolations = interpolate(ch, perm);
+    auto interpolations = interpolate(ch, perm);
     res.insert(res.end(), interpolations.begin(), interpolations.end());
   }
 
@@ -79,7 +79,8 @@ void print_permutations(const std::string& word) {
   if (word.empty()) {
     return;
   }
-  std::vector<std::string> perms =
+
+  auto perms =
       generate_permutations(word, word.length() - 1);
   for (const auto& perm : perms) {
     std::cout << perm << "\n";

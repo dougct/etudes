@@ -56,23 +56,23 @@ Solution:
 #include <iostream>
 #include <vector>
 
-int max_consecutive_subsequence_naive(const std::vector<int>& arr) {
+int max_consecutive_subsequence_naive(const std::vector<int>& nums) {
   int global_max = 0;
-  for (size_t i = 0; i < arr.size(); ++i) {
+  for (size_t i = 0; i < nums.size(); ++i) {
     int partial_sum = 0;
-    for (size_t j = i; j < arr.size(); ++j) {
-      partial_sum += arr[j];
+    for (size_t j = i; j < nums.size(); ++j) {
+      partial_sum += nums[j];
       global_max = std::max(partial_sum, global_max);
     }
   }
   return global_max;
 }
 
-int max_consecutive_subsequence(const std::vector<int>& arr) {
+int max_consecutive_subsequence(const std::vector<int>& nums) {
   int global_max = 0;
   int suffix_max = 0;
-  for (size_t i = 0; i < arr.size(); ++i) {
-    int x = arr[i];
+  for (size_t i = 0; i < nums.size(); ++i) {
+    int x = nums[i];
     if (suffix_max + x > global_max) {
       global_max = suffix_max + x;
       suffix_max += x;
@@ -90,98 +90,98 @@ int max_consecutive_subsequence(const std::vector<int>& arr) {
 // Tests
 
 void test_empty_array() {
-  std::vector<int> arr = {};
+  std::vector<int> nums = {};
   int expected = 0;
-  assert(max_consecutive_subsequence(arr) == expected);
-  assert(max_consecutive_subsequence_naive(arr) == expected);
+  assert(max_consecutive_subsequence(nums) == expected);
+  assert(max_consecutive_subsequence_naive(nums) == expected);
   std::cout << "test_empty_array passed\n";
 }
 
 void test_single_positive_element() {
-  std::vector<int> arr = {5};
+  std::vector<int> nums = {5};
   int expected = 5;
-  assert(max_consecutive_subsequence(arr) == expected);
-  assert(max_consecutive_subsequence_naive(arr) == expected);
+  assert(max_consecutive_subsequence(nums) == expected);
+  assert(max_consecutive_subsequence_naive(nums) == expected);
   std::cout << "test_single_positive_element passed\n";
 }
 
 void test_single_negative_element() {
-  std::vector<int> arr = {-3};
+  std::vector<int> nums = {-3};
   int expected = 0;  // empty subsequence
-  assert(max_consecutive_subsequence(arr) == expected);
-  assert(max_consecutive_subsequence_naive(arr) == expected);
+  assert(max_consecutive_subsequence(nums) == expected);
+  assert(max_consecutive_subsequence_naive(nums) == expected);
   std::cout << "test_single_negative_element passed\n";
 }
 
 void test_all_positive_elements() {
-  std::vector<int> arr = {1, 2, 3, 4, 5};
+  std::vector<int> nums = {1, 2, 3, 4, 5};
   int expected = 15;
-  assert(max_consecutive_subsequence(arr) == expected);
-  assert(max_consecutive_subsequence_naive(arr) == expected);
+  assert(max_consecutive_subsequence(nums) == expected);
+  assert(max_consecutive_subsequence_naive(nums) == expected);
   std::cout << "test_all_positive_elements passed\n";
 }
 
 void test_all_negative_elements() {
-  std::vector<int> arr = {-5, -2, -8, -1};
+  std::vector<int> nums = {-5, -2, -8, -1};
   int expected = 0;  // empty subsequence
-  assert(max_consecutive_subsequence(arr) == expected);
-  assert(max_consecutive_subsequence_naive(arr) == expected);
+  assert(max_consecutive_subsequence(nums) == expected);
+  assert(max_consecutive_subsequence_naive(nums) == expected);
   std::cout << "test_all_negative_elements passed\n";
 }
 
 void test_mixed_positive_negative() {
-  std::vector<int> arr = {-2, 1, -3, 4, -1, 2, 1, -5, 4};
+  std::vector<int> nums = {-2, 1, -3, 4, -1, 2, 1, -5, 4};
   int expected = 6;  // [4, -1, 2, 1]
-  assert(max_consecutive_subsequence(arr) == expected);
-  assert(max_consecutive_subsequence_naive(arr) == expected);
+  assert(max_consecutive_subsequence(nums) == expected);
+  assert(max_consecutive_subsequence_naive(nums) == expected);
   std::cout << "test_mixed_positive_negative passed\n";
 }
 
 void test_negative_followed_by_positive() {
-  std::vector<int> arr = {-1, -2, 3, 4};
+  std::vector<int> nums = {-1, -2, 3, 4};
   int expected = 7;  // [3, 4]
-  assert(max_consecutive_subsequence(arr) == expected);
-  assert(max_consecutive_subsequence_naive(arr) == expected);
+  assert(max_consecutive_subsequence(nums) == expected);
+  assert(max_consecutive_subsequence_naive(nums) == expected);
   std::cout << "test_negative_followed_by_positive passed\n";
 }
 
 void test_positive_followed_by_negative() {
-  std::vector<int> arr = {3, 4, -1, -2};
+  std::vector<int> nums = {3, 4, -1, -2};
   int expected = 7;  // [3, 4]
-  assert(max_consecutive_subsequence(arr) == expected);
-  assert(max_consecutive_subsequence_naive(arr) == expected);
+  assert(max_consecutive_subsequence(nums) == expected);
+  assert(max_consecutive_subsequence_naive(nums) == expected);
   std::cout << "test_positive_followed_by_negative passed\n";
 }
 
 void test_alternating_pattern() {
-  std::vector<int> arr = {1, -3, 2, 1, -1};
+  std::vector<int> nums = {1, -3, 2, 1, -1};
   int expected = 3;  // [2, 1]
-  assert(max_consecutive_subsequence(arr) == expected);
-  assert(max_consecutive_subsequence_naive(arr) == expected);
+  assert(max_consecutive_subsequence(nums) == expected);
+  assert(max_consecutive_subsequence_naive(nums) == expected);
   std::cout << "test_alternating_pattern passed\n";
 }
 
 void test_zero_included() {
-  std::vector<int> arr = {-1, 0, 2, -1, 3};
+  std::vector<int> nums = {-1, 0, 2, -1, 3};
   int expected = 4;  // [0, 2, -1, 3]
-  assert(max_consecutive_subsequence(arr) == expected);
-  assert(max_consecutive_subsequence_naive(arr) == expected);
+  assert(max_consecutive_subsequence(nums) == expected);
+  assert(max_consecutive_subsequence_naive(nums) == expected);
   std::cout << "test_zero_included passed\n";
 }
 
 void test_large_negative_gap() {
-  std::vector<int> arr = {5, -10, 3, 4};
+  std::vector<int> nums = {5, -10, 3, 4};
   int expected = 7;  // [3, 4]
-  assert(max_consecutive_subsequence(arr) == expected);
-  assert(max_consecutive_subsequence_naive(arr) == expected);
+  assert(max_consecutive_subsequence(nums) == expected);
+  assert(max_consecutive_subsequence_naive(nums) == expected);
   std::cout << "test_large_negative_gap passed\n";
 }
 
 void test_kadane_classic_example() {
-  std::vector<int> arr = {-2, -3, 4, -1, -2, 1, 5, -3};
+  std::vector<int> nums = {-2, -3, 4, -1, -2, 1, 5, -3};
   int expected = 7;  // [4, -1, -2, 1, 5]
-  assert(max_consecutive_subsequence(arr) == expected);
-  assert(max_consecutive_subsequence_naive(arr) == expected);
+  assert(max_consecutive_subsequence(nums) == expected);
+  assert(max_consecutive_subsequence_naive(nums) == expected);
   std::cout << "test_kadane_classic_example passed\n";
 }
 

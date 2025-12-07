@@ -26,7 +26,7 @@ std::vector<std::string> generate_binary_nums(size_t n) {
     return {""};
   }
 
-  std::vector<std::string> binary_nums = generate_binary_nums(n - 1);
+  auto binary_nums = generate_binary_nums(n - 1);
 
   std::vector<std::string> res;
   for (const auto& num : binary_nums) {

@@ -1,49 +1,30 @@
 # Manber: Inductive Algorithm Design
 
-A collection of algorithms leveraging mathematical induction, implemented in Rust. Each implementation demonstrates the inductive approach: establishing a base case and building solutions by extending smaller instances.
+A collection of algorithms leveraging mathematical induction, implemented in C++. Each implementation demonstrates the inductive approach: establishing a base case and building solutions by extending smaller instances. These are inspired by the approach described by Udi Manber in his book "Introduction to Algorithms: A creative approach".
 
 ## Problem list
 
-| Problem | File | Description |
-|:--|:--|:--|
-| [**Binary number generation**](src/generate_binary_nums.rs) | Rust | Generate all binary numbers of n digits using recursive concatenation |
-| [**Word permutations**](src/generate_permutations.rs) | Rust | Generate all permutations of a word using character interpolation technique |
-| [**Polynomial evaluation**](src/evaluate_polynomials.rs) | Rust | Evaluate polynomials using Horner's rule with inductive approach |
-| [**Binary tree balance factors**](src/balance_factors.rs) | Rust | Compute balance factors for all nodes in a binary tree |
-| [**Maximum consecutive subsequence**](src/maximum_consecutive_subsequence.rs) | Rust | Find the maximum sum of consecutive elements using Kadane's algorithm |
-| [**Longest increasing subsequence**](src/lis.rs) | Rust | Find the length of the longest increasing subsequence using dynamic programming |
+| Problem | File |
+|:--|:--|
+| **Binary number generation** | [generate_binary_nums.cpp](generate_binary_nums.cpp) |
+| **Word permutations** | [generate_permutations.cpp](generate_permutations.cpp) |
+| **Polynomial evaluation** | [evaluate_polynomials.cpp](evaluate_polynomials.cpp) |
+| **Binary tree balance factors** | [balance_factors.cpp](balance_factors.cpp) |
+| **Maximum consecutive subsequence** | [maximum_consecutive_subsequence.cpp](maximum_consecutive_subsequence.cpp) |
+| **Longest increasing subsequence** | [lis.cpp](lis.cpp) |
 
 ## Running Tests
 
 ```bash
-# Run all tests
-cargo test
+# Compile and run a specific file
+make balance_factors
+make lis
+make generate_permutations
 
-# Run tests for a specific module. Example:
-cargo test generate_binary_nums
+# Clean build artifacts
+make clean
 
-# Run tests in verbose mode
-cargo test -- --nocapture
-
-# Check code without running tests
-cargo check
-
-# Format code
-cargo fmt
-
-# Run with optimizations
-cargo test --release
-```
-
-## Running Individual Modules
-
-```bash
-# Run the binary (shows help message)
-cargo run
-
-# Build the project
-cargo build
-
-# Build with optimizations
-cargo build --release
+# Or compile and run separately
+clang++ -std=c++17 -Wall -Wextra -O2 -o lis.bin lis.cpp
+./lis.bin
 ```

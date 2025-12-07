@@ -1,5 +1,5 @@
 CXX = clang++
-CXXFLAGS = -std=c++17 -Wall -Wextra -O2
+CXXFLAGS = -std=c++17 -Wall -Wextra -g
 
 # Generic rule: make <name> compiles and runs <name>.cpp
 %: %.cpp

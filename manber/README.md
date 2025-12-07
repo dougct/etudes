@@ -25,6 +25,6 @@ make generate_permutations
 make clean
 
 # Or compile and run separately
-clang++ -std=c++17 -Wall -Wextra -O2 -o lis.bin lis.cpp
+clang++ -std=c++17 -Wall -Wextra -o lis.bin lis.cpp
 ./lis.bin
 ```

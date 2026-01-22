@@ -1,6 +1,7 @@
 #pragma once
 
 #include <atomic>
+#include <cassert>
 #include <cstddef>
 #include <cstdint>
 #include <cstdlib>
@@ -121,9 +122,7 @@ class LockFreeCircularBuffer {
     return kSize - read + write;
   }
 
-  static constexpr uint32_t capacity() {
-    return Capacity;
-  }
+  static constexpr uint32_t capacity() { return Capacity; }
 
   // Peek at front element without removing
   T* front() {
@@ -138,9 +137,10 @@ class LockFreeCircularBuffer {
   }
 
   // Consume front element after peeking with front()
-  // Precondition: buffer must not be empty (caller should have checked via front())
   void popFront() {
     const uint32_t currentRead = readIndex_.load(std::memory_order_relaxed);
+    assert(currentRead != writeIndex_.load(std::memory_order_acquire) &&
+           "popFront called on empty buffer");
     buffer_[currentRead].~T();
     readIndex_.store(nextIndex(currentRead), std::memory_order_release);
   }

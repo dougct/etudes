@@ -1,6 +1,7 @@
 #pragma once
 
 #include <atomic>
+#include <cassert>
 #include <cstddef>
 #include <cstdint>
 #include <cstdlib>
@@ -61,9 +62,7 @@ class AtomicCircularBuffer {
   }
 
   // Query if empty (approximate)
-  bool empty() const {
-    return readIndex_.load() == writeIndex_.load();
-  }
+  bool empty() const { return readIndex_.load() == writeIndex_.load(); }
 
   // Query if full (approximate)
   bool full() const {
@@ -88,9 +87,7 @@ class AtomicCircularBuffer {
     return kSize - read + write;
   }
 
-  static constexpr uint32_t capacity() {
-    return Capacity;
-  }
+  static constexpr uint32_t capacity() { return Capacity; }
 
   // Peek at front element without removing
   T* front() {
@@ -105,9 +102,10 @@ class AtomicCircularBuffer {
   }
 
   // Consume front element after peeking with front()
-  // Precondition: buffer must not be empty (caller should have checked via front())
   void popFront() {
     const uint32_t currentRead = readIndex_.load();
+    assert(currentRead != writeIndex_.load() &&
+           "popFront called on empty buffer");
     buffer_[currentRead].~T();
     readIndex_.store(nextIndex(currentRead));
   }

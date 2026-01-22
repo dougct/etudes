@@ -1,6 +1,7 @@
 #pragma once
 
 #include <array>
+#include <cassert>
 #include <cstddef>
 #include <cstdint>
 #include <mutex>
@@ -73,9 +74,7 @@ class SimpleCircularBuffer {
     return kSize - readIndex_ + writeIndex_;
   }
 
-  static constexpr uint32_t capacity() {
-    return Capacity;
-  }
+  static constexpr uint32_t capacity() { return Capacity; }
 
   // Peek at front element without removing
   T* front() {
@@ -90,9 +89,9 @@ class SimpleCircularBuffer {
   }
 
   // Consume front element after peeking with front()
-  // Precondition: buffer must not be empty (caller should have checked via front())
   void popFront() {
     std::lock_guard<std::mutex> lock(mutex_);
+    assert(readIndex_ != writeIndex_ && "popFront called on empty buffer");
     readIndex_ = nextIndex(readIndex_);
   }
 

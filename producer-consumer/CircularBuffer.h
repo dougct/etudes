@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cassert>
 #include <cstddef>
 #include <cstdint>
 #include <cstdlib>
@@ -41,7 +42,8 @@ class CircularBuffer {
   }
 
  public:
-  explicit CircularBuffer() : buffer_(static_cast<T*>(std::malloc(sizeof(T) * kSize))) {
+  explicit CircularBuffer()
+      : buffer_(static_cast<T*>(std::malloc(sizeof(T) * kSize))) {
     if (!buffer_) {
       throw std::bad_alloc();
     }
@@ -91,9 +93,7 @@ class CircularBuffer {
     return kSize - readIndex_ + writeIndex_;
   }
 
-  static constexpr uint32_t capacity() {
-    return Capacity;
-  }
+  static constexpr uint32_t capacity() { return Capacity; }
 
   // Peek at front element without removing
   T* front() {
@@ -108,9 +108,9 @@ class CircularBuffer {
   }
 
   // Consume front element after peeking with front()
-  // Precondition: buffer must not be empty (caller should have checked via front())
   void popFront() {
     std::lock_guard<std::mutex> lock(mutex_);
+    assert(readIndex_ != writeIndex_ && "popFront called on empty buffer");
     buffer_[readIndex_].~T();
     readIndex_ = nextIndex(readIndex_);
   }

@@ -41,8 +41,9 @@ static void BM_ProducerConsumer(benchmark::State& state) {
       while (!ring.front()) {
         std::this_thread::yield();
       }
-      auto value = ring.try_pop();
-      sum += *value;
+      size_t value;
+      ring.try_pop(value);
+      sum += value;
     }
 
     producer.join();
@@ -65,7 +66,8 @@ static void BM_SingleThreaded_PushPop(benchmark::State& state) {
 
     // Empty the buffer
     for (size_t i = 0; i < capacity; ++i) {
-      auto value = ring.try_pop();
+      size_t value;
+      ring.try_pop(value);
       benchmark::DoNotOptimize(value);
     }
   }
@@ -82,7 +84,8 @@ static void BM_Alternating_PushPop(benchmark::State& state) {
   for (auto _ : state) {
     for (size_t i = 0; i < operations; ++i) {
       benchmark::DoNotOptimize(ring.try_push(i));
-      auto value = ring.try_pop();
+      size_t value;
+      ring.try_pop(value);
       benchmark::DoNotOptimize(value);
     }
   }
@@ -118,9 +121,10 @@ static void BM_MemoryContention(benchmark::State& state) {
 
     start_flag = true;
     while (consumed < iterations) {
-      if (auto value = ring.try_pop()) {
+      size_t value;
+      if (ring.try_pop(value)) {
         consumed++;
-        benchmark::DoNotOptimize(*value);
+        benchmark::DoNotOptimize(value);
       } else {
         std::this_thread::yield();
       }
@@ -165,9 +169,10 @@ static void BM_BurstTraffic(benchmark::State& state) {
     size_t total_consumed = 0;
 
     while (total_consumed < 100 * burst_size) {
-      if (auto value = ring.try_pop()) {
+      size_t value;
+      if (ring.try_pop(value)) {
         total_consumed++;
-        benchmark::DoNotOptimize(*value);
+        benchmark::DoNotOptimize(value);
       } else {
         std::this_thread::yield();
       }
@@ -212,8 +217,9 @@ static void BM_CorrectnessValidation(benchmark::State& state) {
     start_flag = true;
 
     while (received_values.size() < operations) {
-      if (auto value = ring.try_pop()) {
-        received_values.push_back(*value);
+      size_t value;
+      if (ring.try_pop(value)) {
+        received_values.push_back(value);
       } else if (producer_done && ring.empty()) {
         break;
       } else {

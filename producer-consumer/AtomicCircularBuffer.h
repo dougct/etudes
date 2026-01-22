@@ -2,9 +2,9 @@
 
 #include <atomic>
 #include <cstddef>
+#include <cstdint>
 #include <cstdlib>
 #include <new>
-#include <optional>
 #include <type_traits>
 #include <utility>
 
@@ -27,11 +27,11 @@ class AtomicCircularBuffer {
   T* const buffer_;
 
   // Atomic indices - each owned by one thread, read by the other
-  std::atomic<size_t> readIndex_{0};
-  std::atomic<size_t> writeIndex_{0};
+  std::atomic<uint32_t> readIndex_{0};
+  std::atomic<uint32_t> writeIndex_{0};
 
   // Compute next index with wraparound
-  static constexpr size_t nextIndex(size_t index) {
+  static constexpr uint32_t nextIndex(uint32_t index) {
     return (index + 1) % kSize;
   }
 
@@ -50,8 +50,8 @@ class AtomicCircularBuffer {
   ~AtomicCircularBuffer() {
     // Destruct any remaining elements
     if constexpr (!std::is_trivially_destructible_v<T>) {
-      size_t read = readIndex_.load();
-      size_t write = writeIndex_.load();
+      uint32_t read = readIndex_.load();
+      uint32_t write = writeIndex_.load();
       while (read != write) {
         buffer_[read].~T();
         read = nextIndex(read);
@@ -71,9 +71,9 @@ class AtomicCircularBuffer {
   }
 
   // Query current size (approximate)
-  size_t size() const {
-    const size_t write = writeIndex_.load();
-    const size_t read = readIndex_.load();
+  uint32_t size() const {
+    const uint32_t write = writeIndex_.load();
+    const uint32_t read = readIndex_.load();
 
     // No wraparound (write >= read)
     //   [---R###W---]  where # = filled slots
@@ -88,13 +88,13 @@ class AtomicCircularBuffer {
     return kSize - read + write;
   }
 
-  static constexpr size_t capacity() {
+  static constexpr uint32_t capacity() {
     return Capacity;
   }
 
   // Peek at front element without removing
   T* front() {
-    const size_t currentRead = readIndex_.load();
+    const uint32_t currentRead = readIndex_.load();
 
     // Constraint: Consumer cannot read from an empty buffer
     if (currentRead == writeIndex_.load()) {
@@ -104,12 +104,20 @@ class AtomicCircularBuffer {
     return &buffer_[currentRead];
   }
 
+  // Consume front element after peeking with front()
+  // Precondition: buffer must not be empty (caller should have checked via front())
+  void popFront() {
+    const uint32_t currentRead = readIndex_.load();
+    buffer_[currentRead].~T();
+    readIndex_.store(nextIndex(currentRead));
+  }
+
   // Non-blocking push: try to add item to buffer
   // Returns false if buffer is full
   template <class... Args>
   bool try_push(Args&&... args) {
-    const size_t currentWrite = writeIndex_.load();
-    const size_t nextWrite = nextIndex(currentWrite);
+    const uint32_t currentWrite = writeIndex_.load();
+    const uint32_t nextWrite = nextIndex(currentWrite);
 
     // Constraint: Producer cannot add to a full buffer
     if (nextWrite == readIndex_.load()) {
@@ -123,19 +131,19 @@ class AtomicCircularBuffer {
   }
 
   // Non-blocking pop: try to remove item from buffer
-  // Returns nullopt if buffer is empty
-  std::optional<T> try_pop() {
-    const size_t currentRead = readIndex_.load();
+  // Returns false if buffer is empty
+  bool try_pop(T& out) {
+    const uint32_t currentRead = readIndex_.load();
 
     // Constraint: Consumer cannot read from an empty buffer
     if (currentRead == writeIndex_.load()) {
-      return std::nullopt;
+      return false;
     }
 
-    T item = std::move(buffer_[currentRead]);
+    out = std::move(buffer_[currentRead]);
     buffer_[currentRead].~T();
     readIndex_.store(nextIndex(currentRead));
 
-    return item;
+    return true;
   }
 };

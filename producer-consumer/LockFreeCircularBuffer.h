@@ -2,6 +2,7 @@
 
 #include <atomic>
 #include <cstddef>
+#include <cstdint>
 #include <cstdlib>
 #include <new>
 #include <optional>
@@ -23,14 +24,21 @@ class LockFreeCircularBuffer {
 
  public:
   // Cache line size for padding to prevent false sharing.
-  // Apple Silicon and some ARM processors use 128-byte cache lines.
-#if defined(__aarch64__) && defined(__APPLE__)
-  static constexpr size_t kCacheLineSize = 128;
-#elif defined(__cpp_lib_hardware_interference_size)
+  //
+  // We prefer std::hardware_destructive_interference_size when available, as
+  // it provides the platform-specific value.
+  //
+  // Fallback uses 128 bytes (a cache line pair) to be defensive against
+  // adjacent cache line prefetching in some architectures.
+  //
+  // See: folly/lang/Align.h for similar rationale.
+#if defined(__cpp_lib_hardware_interference_size)
   static constexpr size_t kCacheLineSize =
       std::hardware_destructive_interference_size;
-#else
+#elif defined(__aarch64__) || defined(__arm__)
   static constexpr size_t kCacheLineSize = 64;
+#else
+  static constexpr size_t kCacheLineSize = 128;
 #endif
 
  private:
@@ -43,18 +51,16 @@ class LockFreeCircularBuffer {
   // Raw memory storage - elements constructed via placement new
   T* const buffer_;
 
-  // readIndex_ aligned to cache line. Padding after ensures writeIndex_ (which
-  // is written by a different thread) doesn't share the same cache line.
-  alignas(kCacheLineSize) std::atomic<size_t> readIndex_{0};
-  char padReadIndex_[kCacheLineSize - sizeof(std::atomic<size_t>)];
+  // readIndex_ aligned to cache line.
+  alignas(kCacheLineSize) std::atomic<uint32_t> readIndex_{0};
 
   // writeIndex_ aligned to cache line. Padding after prevents false sharing
   // with members of a containing struct that follow this object in memory.
-  alignas(kCacheLineSize) std::atomic<size_t> writeIndex_{0};
-  char padWriteIndex_[kCacheLineSize - sizeof(std::atomic<size_t>)];
+  alignas(kCacheLineSize) std::atomic<uint32_t> writeIndex_{0};
+  char padWriteIndex_[kCacheLineSize - sizeof(std::atomic<uint32_t>)];
 
   // Compute next index with wraparound
-  static constexpr size_t nextIndex(size_t index) {
+  static constexpr uint32_t nextIndex(uint32_t index) {
     return (index + 1) % kSize;
   }
 
@@ -69,12 +75,14 @@ class LockFreeCircularBuffer {
   // Disable copy and move
   LockFreeCircularBuffer(const LockFreeCircularBuffer&) = delete;
   LockFreeCircularBuffer& operator=(const LockFreeCircularBuffer&) = delete;
+  LockFreeCircularBuffer(LockFreeCircularBuffer&&) = delete;
+  LockFreeCircularBuffer& operator=(LockFreeCircularBuffer&&) = delete;
 
   ~LockFreeCircularBuffer() {
     // Destruct any remaining elements
     if constexpr (!std::is_trivially_destructible_v<T>) {
-      size_t read = readIndex_.load(std::memory_order_relaxed);
-      size_t write = writeIndex_.load(std::memory_order_relaxed);
+      uint32_t read = readIndex_.load(std::memory_order_relaxed);
+      uint32_t write = writeIndex_.load(std::memory_order_relaxed);
       while (read != write) {
         buffer_[read].~T();
         read = nextIndex(read);
@@ -96,9 +104,9 @@ class LockFreeCircularBuffer {
   }
 
   // Query current size (approximate)
-  size_t size() const {
-    const size_t write = writeIndex_.load(std::memory_order_acquire);
-    const size_t read = readIndex_.load(std::memory_order_acquire);
+  uint32_t size() const {
+    const uint32_t write = writeIndex_.load(std::memory_order_acquire);
+    const uint32_t read = readIndex_.load(std::memory_order_acquire);
 
     // No wraparound (write >= read)
     //   [---R###W---]  where # = filled slots
@@ -113,13 +121,13 @@ class LockFreeCircularBuffer {
     return kSize - read + write;
   }
 
-  static constexpr size_t capacity() {
+  static constexpr uint32_t capacity() {
     return Capacity;
   }
 
   // Peek at front element without removing
   T* front() {
-    const size_t currentRead = readIndex_.load(std::memory_order_relaxed);
+    const uint32_t currentRead = readIndex_.load(std::memory_order_relaxed);
 
     // Constraint: Consumer cannot read from an empty buffer
     if (currentRead == writeIndex_.load(std::memory_order_acquire)) {
@@ -129,12 +137,20 @@ class LockFreeCircularBuffer {
     return &buffer_[currentRead];
   }
 
+  // Consume front element after peeking with front()
+  // Precondition: buffer must not be empty (caller should have checked via front())
+  void popFront() {
+    const uint32_t currentRead = readIndex_.load(std::memory_order_relaxed);
+    buffer_[currentRead].~T();
+    readIndex_.store(nextIndex(currentRead), std::memory_order_release);
+  }
+
   // Non-blocking push: try to add item to buffer
   // Returns false if buffer is full
   template <class... Args>
   bool try_push(Args&&... args) {
-    const size_t currentWrite = writeIndex_.load(std::memory_order_relaxed);
-    const size_t nextWrite = nextIndex(currentWrite);
+    const uint32_t currentWrite = writeIndex_.load(std::memory_order_relaxed);
+    const uint32_t nextWrite = nextIndex(currentWrite);
 
     // Constraint: Producer cannot add to a full buffer
     if (nextWrite == readIndex_.load(std::memory_order_acquire)) {
@@ -148,19 +164,19 @@ class LockFreeCircularBuffer {
   }
 
   // Non-blocking pop: try to remove item from buffer
-  // Returns nullopt if buffer is empty
-  std::optional<T> try_pop() {
-    const size_t currentRead = readIndex_.load(std::memory_order_relaxed);
+  // Returns false if buffer is empty
+  bool try_pop(T& out) {
+    const uint32_t currentRead = readIndex_.load(std::memory_order_relaxed);
 
     // Constraint: Consumer cannot read from an empty buffer
     if (currentRead == writeIndex_.load(std::memory_order_acquire)) {
-      return std::nullopt;
+      return false;
     }
 
-    T item = std::move(buffer_[currentRead]);
+    out = std::move(buffer_[currentRead]);
     buffer_[currentRead].~T();
     readIndex_.store(nextIndex(currentRead), std::memory_order_release);
 
-    return item;
+    return true;
   }
 };

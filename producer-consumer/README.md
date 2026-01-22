@@ -19,28 +19,28 @@ Benchmarks run on Apple M1 (8 cores), compiled with `-O2`:
 
 | Implementation | Time | Relative |
 |---------------|------|----------|
-| SimpleCircularBuffer | 66.9 ms | 1.0x |
-| CircularBuffer | 72.6 ms | 0.92x |
-| AtomicCircularBuffer | 44.6 ms | 1.50x |
-| LockFreeCircularBuffer | **20.6 ms** | **3.25x** |
+| SimpleCircularBuffer | 67.7 ms | 3.3x slower |
+| CircularBuffer | 99.0 ms | 4.8x slower |
+| AtomicCircularBuffer | 44.6 ms | 2.2x slower |
+| LockFreeCircularBuffer | **20.5 ms** | **1.0x (fastest)** |
 
 ### Single-Threaded Operations
 
 | Implementation | Throughput |
 |---------------|------------|
-| SimpleCircularBuffer | ~106 M items/s |
-| CircularBuffer | ~113 M items/s |
-| AtomicCircularBuffer | ~382 M items/s |
-| LockFreeCircularBuffer | ~379 M items/s |
+| SimpleCircularBuffer | ~112 M items/s |
+| CircularBuffer | ~111 M items/s |
+| AtomicCircularBuffer | ~390 M items/s |
+| LockFreeCircularBuffer | ~390 M items/s |
 
 ### Alternating Push/Pop
 
 | Implementation | Throughput |
 |---------------|------------|
-| SimpleCircularBuffer | ~107 M items/s |
-| CircularBuffer | ~111 M items/s |
-| AtomicCircularBuffer | ~681 M items/s |
-| LockFreeCircularBuffer | ~673 M items/s |
+| SimpleCircularBuffer | ~114 M items/s |
+| CircularBuffer | ~112 M items/s |
+| AtomicCircularBuffer | ~700 M items/s |
+| LockFreeCircularBuffer | ~702 M items/s |
 
 ### Why Are Some Implementations Faster?
 
@@ -72,14 +72,15 @@ All implementations provide the same interface:
 
 ```cpp
 bool try_push(const T& item);  // Returns false if full
-std::optional<T> try_pop();    // Returns nullopt if empty
+bool try_pop(T& out);          // Returns false if empty
 
 // Query operations
 bool empty() const;
 bool full() const;
-size_t size() const;
-static constexpr size_t capacity();
+uint32_t size() const;
+static constexpr uint32_t capacity();
 T* front();                    // Peek at front element
+void popFront();               // Consume front element (after checking with front())
 ```
 
 ### Blocking Wrappers
@@ -96,14 +97,13 @@ void push(Buffer& buffer, const T& item) {
 }
 
 // Blocking pop - spins until data is available
-template <typename Buffer>
-auto pop(Buffer& buffer) {
-    while (true) {
-        if (auto item = buffer.try_pop()) {
-            return *item;
-        }
+template <typename Buffer, typename T>
+T pop(Buffer& buffer) {
+    T item;
+    while (!buffer.try_pop(item)) {
         // Spin, yield, or wait on condition variable
     }
+    return item;
 }
 ```
 
@@ -152,11 +152,11 @@ int main() {
 
     std::thread consumer([&buffer]() {
         for (int i = 0; i < 1000; ++i) {
-            std::optional<int> value;
-            while (!(value = buffer.try_pop())) {
+            int value;
+            while (!buffer.try_pop(value)) {
                 // Spin until data available
             }
-            // process *value...
+            // process value...
         }
     });
 

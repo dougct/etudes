@@ -62,15 +62,15 @@ TYPED_TEST(BufferTest, PushOneItem) {
 
 TYPED_TEST(BufferTest, PopOneItem) {
   this->buffer.try_push(42);
-  auto item = this->buffer.try_pop();
-  ASSERT_TRUE(item.has_value());
-  EXPECT_EQ(*item, 42);
+  int item;
+  ASSERT_TRUE(this->buffer.try_pop(item));
+  EXPECT_EQ(item, 42);
   EXPECT_TRUE(this->buffer.empty());
 }
 
-TYPED_TEST(BufferTest, PopFromEmptyReturnsNullopt) {
-  auto item = this->buffer.try_pop();
-  EXPECT_FALSE(item.has_value());
+TYPED_TEST(BufferTest, PopFromEmptyReturnsFalse) {
+  int item;
+  EXPECT_FALSE(this->buffer.try_pop(item));
 }
 
 TYPED_TEST(BufferTest, FrontReturnsNullptrWhenEmpty) {
@@ -105,9 +105,9 @@ TYPED_TEST(BufferTest, FIFOOrder) {
     this->buffer.try_push(i);
   }
   for (int i = 0; i < 5; ++i) {
-    auto item = this->buffer.try_pop();
-    ASSERT_TRUE(item.has_value());
-    EXPECT_EQ(*item, i);
+    int item;
+    ASSERT_TRUE(this->buffer.try_pop(item));
+    EXPECT_EQ(item, i);
   }
 }
 
@@ -118,7 +118,8 @@ TYPED_TEST(BufferTest, WrapAround) {
   }
   // Pop half
   for (int i = 0; i < 5; ++i) {
-    this->buffer.try_pop();
+    int item;
+    this->buffer.try_pop(item);
   }
   // Push more (should wrap around)
   for (int i = 10; i < 15; ++i) {
@@ -126,9 +127,9 @@ TYPED_TEST(BufferTest, WrapAround) {
   }
   // Verify order
   for (int i = 5; i < 15; ++i) {
-    auto item = this->buffer.try_pop();
-    ASSERT_TRUE(item.has_value());
-    EXPECT_EQ(*item, i);
+    int item;
+    ASSERT_TRUE(this->buffer.try_pop(item));
+    EXPECT_EQ(item, i);
   }
 }
 
@@ -152,11 +153,11 @@ TYPED_TEST(BufferTest, ProducerConsumerThreads) {
 
   std::thread consumer([this, &consumed]() {
     for (int i = 0; i < NUM_ITEMS; ++i) {
-      std::optional<int> item;
-      while (!(item = this->buffer.try_pop())) {
+      int item;
+      while (!this->buffer.try_pop(item)) {
         // Spin until we can pop
       }
-      consumed.push_back(*item);
+      consumed.push_back(item);
     }
   });
 
@@ -187,12 +188,12 @@ void RunHighThroughputTest() {
   int lastPopped = -1;
   std::thread consumer([&buffer, &lastPopped]() {
     for (int i = 0; i < NUM_ITEMS; ++i) {
-      std::optional<int> item;
-      while (!(item = buffer.try_pop())) {
+      int item;
+      while (!buffer.try_pop(item)) {
       }
       // Verify ordering
-      EXPECT_EQ(*item, lastPopped + 1);
-      lastPopped = *item;
+      EXPECT_EQ(item, lastPopped + 1);
+      lastPopped = item;
     }
   });
 

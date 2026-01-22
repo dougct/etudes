@@ -1,10 +1,10 @@
 #pragma once
 
 #include <cstddef>
+#include <cstdint>
 #include <cstdlib>
 #include <mutex>
 #include <new>
-#include <optional>
 #include <type_traits>
 #include <utility>
 
@@ -27,16 +27,16 @@ class CircularBuffer {
   T* const buffer_;
 
   // Read index: points to next element to consume
-  size_t readIndex_{0};
+  uint32_t readIndex_{0};
 
   // Write index: points to next slot to fill
-  size_t writeIndex_{0};
+  uint32_t writeIndex_{0};
 
   // Mutex protects the entire buffer (mutable for use in const methods)
   mutable std::mutex mutex_;
 
   // Compute next index with wraparound
-  static constexpr size_t nextIndex(size_t index) {
+  static constexpr uint32_t nextIndex(uint32_t index) {
     return (index + 1) % kSize;
   }
 
@@ -75,7 +75,7 @@ class CircularBuffer {
   }
 
   // Query current size (approximate)
-  size_t size() const {
+  uint32_t size() const {
     std::lock_guard<std::mutex> lock(mutex_);
 
     // No wraparound (writeIndex_ >= readIndex_)
@@ -91,7 +91,7 @@ class CircularBuffer {
     return kSize - readIndex_ + writeIndex_;
   }
 
-  static constexpr size_t capacity() {
+  static constexpr uint32_t capacity() {
     return Capacity;
   }
 
@@ -107,13 +107,21 @@ class CircularBuffer {
     return &buffer_[readIndex_];
   }
 
+  // Consume front element after peeking with front()
+  // Precondition: buffer must not be empty (caller should have checked via front())
+  void popFront() {
+    std::lock_guard<std::mutex> lock(mutex_);
+    buffer_[readIndex_].~T();
+    readIndex_ = nextIndex(readIndex_);
+  }
+
   // Non-blocking push: try to add item to buffer
   // Returns false if buffer is full
   template <class... Args>
   bool try_push(Args&&... args) {
     std::lock_guard<std::mutex> lock(mutex_);
 
-    const size_t nextWrite = nextIndex(writeIndex_);
+    const uint32_t nextWrite = nextIndex(writeIndex_);
     // Constraint: Producer cannot add to a full buffer
     if (nextWrite == readIndex_) {
       return false;
@@ -126,19 +134,19 @@ class CircularBuffer {
   }
 
   // Non-blocking pop: try to remove item from buffer
-  // Returns nullopt if buffer is empty
-  std::optional<T> try_pop() {
+  // Returns false if buffer is empty
+  bool try_pop(T& out) {
     std::lock_guard<std::mutex> lock(mutex_);
 
     // Constraint: Consumer cannot read from an empty buffer
     if (readIndex_ == writeIndex_) {
-      return std::nullopt;
+      return false;
     }
 
-    T item = std::move(buffer_[readIndex_]);
+    out = std::move(buffer_[readIndex_]);
     buffer_[readIndex_].~T();
     readIndex_ = nextIndex(readIndex_);
 
-    return item;
+    return true;
   }
 };

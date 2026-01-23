@@ -17,7 +17,7 @@ static void BM_ProducerConsumer(benchmark::State& state) {
   for (auto _ : state) {
     state.PauseTiming();
     const size_t iter = state.range(0);
-    BufferType ring;
+    BufferType buffer;
     std::atomic<bool> flag(false);
     long sum = 0;
 
@@ -30,7 +30,7 @@ static void BM_ProducerConsumer(benchmark::State& state) {
 
       size_t i = 0;
       while (i < iter) {
-        if (ring.try_push(i)) {
+        if (buffer.try_push(i)) {
           i++;
         }
       }
@@ -38,11 +38,11 @@ static void BM_ProducerConsumer(benchmark::State& state) {
 
     flag = true;
     for (size_t i = 0; i < iter; ++i) {
-      while (!ring.front()) {
+      while (!buffer.front()) {
         std::this_thread::yield();
       }
       size_t value;
-      ring.try_pop(value);
+      buffer.try_pop(value);
       sum += value;
     }
 
@@ -56,18 +56,18 @@ static void BM_ProducerConsumer(benchmark::State& state) {
 template <typename BufferType>
 static void BM_SingleThreaded_PushPop(benchmark::State& state) {
   const size_t capacity = state.range(0);
-  BufferType ring;
+  BufferType buffer;
 
   for (auto _ : state) {
     // Fill the buffer
     for (size_t i = 0; i < capacity; ++i) {
-      benchmark::DoNotOptimize(ring.try_push(i));
+      benchmark::DoNotOptimize(buffer.try_push(i));
     }
 
     // Empty the buffer
     for (size_t i = 0; i < capacity; ++i) {
       size_t value;
-      ring.try_pop(value);
+      buffer.try_pop(value);
       benchmark::DoNotOptimize(value);
     }
   }
@@ -79,13 +79,13 @@ static void BM_SingleThreaded_PushPop(benchmark::State& state) {
 template <typename BufferType>
 static void BM_Alternating_PushPop(benchmark::State& state) {
   const size_t operations = state.range(0);
-  BufferType ring;
+  BufferType buffer;
 
   for (auto _ : state) {
     for (size_t i = 0; i < operations; ++i) {
-      benchmark::DoNotOptimize(ring.try_push(i));
+      benchmark::DoNotOptimize(buffer.try_push(i));
       size_t value;
-      ring.try_pop(value);
+      buffer.try_pop(value);
       benchmark::DoNotOptimize(value);
     }
   }
@@ -100,7 +100,7 @@ static void BM_MemoryContention(benchmark::State& state) {
 
   for (auto _ : state) {
     state.PauseTiming();
-    BufferType ring;
+    BufferType buffer;
     std::atomic<bool> start_flag(false);
     std::atomic<size_t> produced(0);
     std::atomic<size_t> consumed(0);
@@ -112,7 +112,7 @@ static void BM_MemoryContention(benchmark::State& state) {
         std::this_thread::yield();
 
       for (size_t i = 0; i < iterations; ++i) {
-        while (!ring.try_push(i)) {
+        while (!buffer.try_push(i)) {
           std::this_thread::yield();
         }
         produced++;
@@ -122,7 +122,7 @@ static void BM_MemoryContention(benchmark::State& state) {
     start_flag = true;
     while (consumed < iterations) {
       size_t value;
-      if (ring.try_pop(value)) {
+      if (buffer.try_pop(value)) {
         consumed++;
         benchmark::DoNotOptimize(value);
       } else {
@@ -145,7 +145,7 @@ static void BM_BurstTraffic(benchmark::State& state) {
 
   for (auto _ : state) {
     state.PauseTiming();
-    BufferType ring;
+    BufferType buffer;
     std::atomic<bool> start_flag(false);
 
     state.ResumeTiming();
@@ -157,7 +157,7 @@ static void BM_BurstTraffic(benchmark::State& state) {
       // Send bursts of data
       for (size_t burst = 0; burst < 100; ++burst) {
         for (size_t i = 0; i < burst_size; ++i) {
-          while (!ring.try_push(burst * burst_size + i)) {
+          while (!buffer.try_push(burst * burst_size + i)) {
             std::this_thread::yield();
           }
         }
@@ -170,7 +170,7 @@ static void BM_BurstTraffic(benchmark::State& state) {
 
     while (total_consumed < 100 * burst_size) {
       size_t value;
-      if (ring.try_pop(value)) {
+      if (buffer.try_pop(value)) {
         total_consumed++;
         benchmark::DoNotOptimize(value);
       } else {
@@ -190,7 +190,7 @@ static void BM_CorrectnessValidation(benchmark::State& state) {
 
   for (auto _ : state) {
     state.PauseTiming();
-    BufferType ring;
+    BufferType buffer;
     std::atomic<bool> start_flag(false);
     std::atomic<bool> producer_done(false);
     std::vector<size_t> expected_values(operations);
@@ -207,7 +207,7 @@ static void BM_CorrectnessValidation(benchmark::State& state) {
         std::this_thread::yield();
 
       for (size_t i = 0; i < operations; ++i) {
-        while (!ring.try_push(i)) {
+        while (!buffer.try_push(i)) {
           std::this_thread::yield();
         }
       }
@@ -218,9 +218,9 @@ static void BM_CorrectnessValidation(benchmark::State& state) {
 
     while (received_values.size() < operations) {
       size_t value;
-      if (ring.try_pop(value)) {
+      if (buffer.try_pop(value)) {
         received_values.push_back(value);
-      } else if (producer_done && ring.empty()) {
+      } else if (producer_done && buffer.empty()) {
         break;
       } else {
         std::this_thread::yield();

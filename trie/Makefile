@@ -1,5 +1,11 @@
+CXX = /usr/bin/clang++
+CXXFLAGS = -O2 -std=c++20 -Wall -Wextra
+GTEST_DIR = $(HOME)/local
+GTEST_CFLAGS = -I$(GTEST_DIR)/include
+GTEST_LIBS = -L$(GTEST_DIR)/lib -lgtest
+
 test: TrieTests.cpp
-	clang++ -O2 -std=c++20 -Wall -Wextra `pkg-config --cflags --libs gtest` -L/opt/homebrew/Cellar/llvm/21.1.8/lib/c++ -Wl,-rpath,/opt/homebrew/Cellar/llvm/21.1.8/lib/c++ -o trie_tests TrieTests.cpp
+	$(CXX) $(CXXFLAGS) $(GTEST_CFLAGS) -o trie_tests TrieTests.cpp $(GTEST_LIBS)
 	./trie_tests
 
 clean:

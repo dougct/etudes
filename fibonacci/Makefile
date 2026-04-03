@@ -1,5 +1,11 @@
+CXX = /usr/bin/clang++
+CXXFLAGS = -O2 -std=c++20 -Wall -Wextra
+GTEST_DIR = $(HOME)/local
+GTEST_CFLAGS = -I$(GTEST_DIR)/include
+GTEST_LIBS = -L$(GTEST_DIR)/lib -lgtest
+
 test: FibonacciTests.cpp
-	clang++ -O2 -std=c++20 -Wall -Wextra `pkg-config --cflags --libs gtest` -L/opt/homebrew/Cellar/llvm/21.1.8/lib/c++ -Wl,-rpath,/opt/homebrew/Cellar/llvm/21.1.8/lib/c++ -o fibonacci_tests FibonacciTests.cpp
+	$(CXX) $(CXXFLAGS) $(GTEST_CFLAGS) -o fibonacci_tests FibonacciTests.cpp $(GTEST_LIBS)
 	./fibonacci_tests
 
 clean:
